@@ -1,33 +1,53 @@
 import axios from 'axios'
 import './App.css'
 import { useState } from 'react'
-import { Todo } from './Todo';
-import { TodoType } from "./types/todo"
 import { Text } from './Text';
-import { UserProfile } from './UserProfile';
-import { User } from './types/user';
-
-const user: User = {
-  name: "なぎそら",
-  // hobbies: ["アニメ", "ゲーム"],
-}
+import { UserCard } from './components/UserCard';
+import { UserProfile } from './types/userProfile';
+import { User } from './types/api/user';
 
 function App() {
-  const [todos, setTodos] = useState<Array<TodoType>>([]);
+  const [userProfiles, setUserProfiles] = useState<Array<UserProfile>>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   const onClickFetchData = () => {
-    axios.get<Array<TodoType>>("https://jsonplaceholder.typicode.com/todos").then((res) => {
-      setTodos(res.data);
-    })
+    setLoading(true);
+    setError(false);
+
+    axios
+      .get<Array<User>>("https://jsonplaceholder.typicode.com/users")
+      .then((res) => {
+        const data = res.data.map((user) => ({
+          id: user.id,
+          name: `${user.name}(${user.username})`,
+          email: user.email,
+          address: `${user.address.city}${user.address.suite}${user.address.street}`
+        }));
+        setUserProfiles(data);
+      }).catch(() => {
+        setError(true);
+      }).finally(() => {
+        setLoading(false);
+      });
   }
   return (
     <>
-    <UserProfile user={user} />
+      
       <Text color="red" fontSize='18px' />
       <button onClick={onClickFetchData}>データ取得</button>
-      {todos.map((todo) => (
-        <Todo key={todo.id} title={todo.title} userId={todo.userId} completed={todo.completed} />
-      ))}
+      <br />
+      {error ? (
+        <p>エラー</p>
+      ) : loading ? (
+        <p>Loading...</p>
+      ) : (
+        <>
+          {userProfiles.map((user) => (
+            <UserCard key={user.id} user={user} />
+          ))}
+        </>
+      )}
     </>
   )
 }
